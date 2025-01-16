@@ -3,6 +3,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import "./TiptapEditor.css";
+import axios from "axios";
 
 interface TiptapEditorProps {
   title?: string;
@@ -16,6 +17,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   fileContent,
 }) => {
   const [metadata, setMetadata] = useState({
+    doc_id: 123,
     title: title || "Untitled Document",
     author: "Raksmey",
     created_date: new Date().toISOString().split("T")[0],
@@ -31,6 +33,8 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const [editorContent, setEditorContent] = useState("");
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  console.log("fileContent", fileContent);
 
   useEffect(() => {
     if (fileContent) {
@@ -53,6 +57,38 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     }
   };
 
+  const sendToEncrypt = () => {
+    if (editor) {
+      const jsonContent = editor.getJSON();
+      const structuredJSON = {
+        metadata: {
+          ...metadata,
+          last_modified: new Date().toISOString().split("T")[0],
+        },
+        content: jsonContent,
+      };
+      const jsonString = JSON.stringify(structuredJSON, null, 2);
+      console.log("jsonString", jsonString);
+  
+      // Send the jsonString to the backend encryption API using axios
+      axios
+        .post("http://localhost:3003/sendToEncrypt", {
+          jsonString,
+          id: "unique-id"  // Optional unique ID
+        })
+        .then((response) => {
+          console.log("Encrypted data:", response.data);
+          // Handle the response
+        })
+        .catch((error) => {
+          console.error("Error sending data:", error);
+        });
+    } else {
+      console.warn("Editor instance is not ready");
+    }
+  };
+  
+  
   const saveFileAsJSON = () => {
     if (editor) {
       const jsonContent = editor.getJSON();
@@ -146,30 +182,13 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     };
   }, [editor]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        toolbarRef.current &&
-        !toolbarRef.current.contains(event.target as Node) &&
-        editorContainerRef.current &&
-        !editorContainerRef.current.contains(event.target as Node)
-      ) {
-        setToolbarPosition(null);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   if (!editor) {
     return <p>Loading editor...</p>;
   }
 
   return (
     <div style={{ marginTop: "20px" }} ref={editorContainerRef}>
+      <button onClick={sendToEncrypt}>Test</button>
       <div
         style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}
       >
