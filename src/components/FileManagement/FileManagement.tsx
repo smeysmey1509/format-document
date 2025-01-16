@@ -38,7 +38,7 @@ const FileManagement: React.FC = () => {
         <input
           type="file"
           onChange={openFile}
-          style={{ marginLeft: "10px" }}
+          placeholder="Open File"
         />
       </div>
       {fileCreated && <TiptapEditor fileContent={fileContent} />}
