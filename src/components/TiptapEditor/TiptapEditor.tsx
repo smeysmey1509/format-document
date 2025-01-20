@@ -6,19 +6,19 @@ import "./TiptapEditor.css";
 import axios from "axios";
 
 interface TiptapEditorProps {
-  title?: string;
   onTitleChage?: (title: string) => void;
   fileContent?: any;
+  fileName?: string;
 }
 
 const TiptapEditor: React.FC<TiptapEditorProps> = ({
-  title,
-  onTitleChage,
   fileContent,
+  fileName,
 }) => {
+  const [fileNameState, setFileNameState] = useState(fileName || "");
   const [metadata, setMetadata] = useState({
     doc_id: 123,
-    title: title || "Untitled Document",
+    title: fileNameState || "Untitled Document",
     author: "Raksmey",
     created_date: new Date().toISOString().split("T")[0],
     last_modified: new Date().toISOString().split("T")[0],
@@ -34,7 +34,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  console.log("fileContent", fileContent);
+  console.log("fileNameState: ", fileNameState);
 
   useEffect(() => {
     if (fileContent) {
@@ -50,14 +50,9 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     }
   }, [fileContent]);
 
-  const updateTitle = (title: string) => {
-    setMetadata({ ...metadata, title });
-    if (onTitleChage) {
-      onTitleChage(title);
-    }
-  };
+  console.log("editorContent", editorContent);
 
-  const sendToEncrypt = () => {
+  const formatAsAJSON = (jsonString: string) => {
     if (editor) {
       const jsonContent = editor.getJSON();
       const structuredJSON = {
@@ -68,28 +63,12 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
         content: jsonContent,
       };
       const jsonString = JSON.stringify(structuredJSON, null, 2);
-      console.log("jsonString", jsonString);
-  
-      // Send the jsonString to the backend encryption API using axios
-      axios
-        .post("http://localhost:3003/sendToEncrypt", {
-          jsonString,
-          id: "unique-id"  // Optional unique ID
-        })
-        .then((response) => {
-          console.log("Encrypted data:", response.data);
-          // Handle the response
-        })
-        .catch((error) => {
-          console.error("Error sending data:", error);
-        });
     } else {
-      console.warn("Editor instance is not ready");
+      console.warn("Editor instance is not ready.");
     }
   };
-  
-  
-  const saveFileAsJSON = () => {
+
+  const importAsAJSON = () => {
     if (editor) {
       const jsonContent = editor.getJSON();
       const structuredJSON = {
@@ -113,11 +92,30 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     }
   };
 
+  const saveContentToFile = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3005/api/appendFile",
+        {
+          fileName: fileNameState,
+          content: editorContent,
+        }
+      );
+
+      if (response.status === 200) {
+        console.log(response.data.message);
+      } else {
+        console.error("Failed to save file");
+      }
+    } catch (error) {
+      console.error("Error saving file:", error);
+    }
+  };
+
   const editor = useEditor({
     extensions: [StarterKit, Image],
     content: editorContent,
     editable: true,
-    // autofocus: true,
     onUpdate: ({ editor }) => {
       setEditorContent(editor.getHTML());
     },
@@ -188,19 +186,26 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
   return (
     <div style={{ marginTop: "20px" }} ref={editorContainerRef}>
-      <button onClick={sendToEncrypt}>Test</button>
       <div
-        style={{ marginBottom: "10px", display: "flex", alignItems: "center" }}
+        style={{
+          marginBottom: "10px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
       >
-        <label className="form-label">Title:</label>
+        {/* <label className="form-label">Title:</label>
         <input
           type="text"
           value={metadata.title}
           onChange={(e) => updateTitle(e.target.value)}
           className="form-input"
-        />
-        <button onClick={saveFileAsJSON} className="form-button">
-          Save File
+        /> */}
+        <button className="form-button" onClick={saveContentToFile}>
+          Save
+        </button>
+        <button onClick={importAsAJSON} className="form-button">
+          Import File
         </button>
       </div>
       <div
