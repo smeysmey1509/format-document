@@ -52,22 +52,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
   console.log("editorContent", editorContent);
 
-  const formatAsAJSON = (jsonString: string) => {
-    if (editor) {
-      const jsonContent = editor.getJSON();
-      const structuredJSON = {
-        metadata: {
-          ...metadata,
-          last_modified: new Date().toISOString().split("T")[0],
-        },
-        content: jsonContent,
-      };
-      const jsonString = JSON.stringify(structuredJSON, null, 2);
-    } else {
-      console.warn("Editor instance is not ready.");
-    }
-  };
-
   const importAsAJSON = () => {
     if (editor) {
       const jsonContent = editor.getJSON();
@@ -93,22 +77,36 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   };
 
   const saveContentToFile = async () => {
-    try {
-      const response = await axios.post(
-        "http://localhost:3005/api/appendFile",
-        {
-          fileName: fileNameState,
-          content: editorContent,
-        }
-      );
+    if (editor) {
+      const jsonContent = editor.getJSON();
+      const structuredJSON = {
+        metadata: {
+          ...metadata,
+          last_modified: new Date().toISOString().split("T")[0],
+        },
+        content: jsonContent,
+      };
+      const jsonString = JSON.stringify(structuredJSON, null, 2);
 
-      if (response.status === 200) {
-        console.log(response.data.message);
-      } else {
-        console.error("Failed to save file");
+      try {
+        const response = await axios.post(
+          "http://localhost:3005/api/appendFile",
+          {
+            fileName: fileNameState,
+            content: jsonString,
+          }
+        );
+
+        if (response.status === 200) {
+          console.log(response.data.message);
+        } else {
+          console.error("Failed to save file");
+        }
+      } catch (error) {
+        console.error("Error saving file:", error);
       }
-    } catch (error) {
-      console.error("Error saving file:", error);
+    } else {
+      console.warn("Editor instance is not ready.");
     }
   };
 
@@ -194,6 +192,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           gap: "10px",
         }}
       >
+        {/* <button onClick={formatAsAJSON}>Test Button</button> */}
         {/* <label className="form-label">Title:</label>
         <input
           type="text"
