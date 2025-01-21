@@ -8,6 +8,8 @@ const FileManagement: React.FC = () => {
   const [fileName, setFileName] = useState("");
   const [fileContent, setFileContent] = useState<any>(null);
 
+  console.log("fileName", fileName);
+
   const createFile = async () => {
     setFileCreated(true);
 
@@ -42,26 +44,26 @@ const FileManagement: React.FC = () => {
 
     reader.onload = async (e) => {
       try {
-        // Check if the file content looks encrypted
         const fileContent = e.target?.result as string;
 
-        // Detect non-JSON content by attempting a JSON parse
+        // Attempt to parse the file content as JSON
         try {
           const parsedContent = JSON.parse(fileContent);
           setFileContent(parsedContent);
           setFileCreated(true);
           console.log("File opened successfully as JSON");
         } catch {
-          // If JSON parsing fails, assume the file is encrypted and send it for decryption
+          // If JSON parsing fails, assume the file is encrypted and proceed to decrypt
           console.warn(
             "File appears to be encrypted. Sending for decryption..."
           );
 
+          const fileName = file.name; // Use the file name from the input
           try {
             const response = await axios.post(
               "http://localhost:3005/api/decryptFile",
               {
-                fileName: fileName,
+                fileName: fileName.replace(".scl", ""), // Send the file name without extension if required
               }
             );
 
@@ -73,17 +75,22 @@ const FileManagement: React.FC = () => {
                 setFileContent(parsedDecryptedContent);
                 setFileCreated(true);
                 console.log("Decrypted content loaded successfully");
-              } catch (error) {
+              } catch (parseError) {
                 console.error(
                   "Failed to parse decrypted content as JSON:",
-                  error
+                  parseError
                 );
               }
             } else {
-              console.error("Failed to decrypt file:", response.statusText);
+              console.error(
+                `Failed to decrypt file. Status: ${response.statusText}`
+              );
             }
-          } catch (error) {
-            console.error("Error sending file for decryption:", error);
+          } catch (decryptionError) {
+            console.error(
+              "Error sending file for decryption:",
+              decryptionError
+            );
           }
         }
       } catch (error) {
