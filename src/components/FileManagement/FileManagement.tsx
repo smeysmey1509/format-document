@@ -40,8 +40,6 @@ const FileManagement: React.FC = () => {
 
     const reader = new FileReader();
 
-    console.log("filename", file.name);
-
     reader.onload = async (e) => {
       try {
         // Check if the file content looks encrypted
@@ -63,7 +61,7 @@ const FileManagement: React.FC = () => {
             const response = await axios.post(
               "http://localhost:3005/api/decryptFile",
               {
-                fileName: file.name,
+                fileName: fileName,
               }
             );
 
