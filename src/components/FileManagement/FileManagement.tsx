@@ -32,19 +32,69 @@ const FileManagement: React.FC = () => {
 
   const openFile = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
+
+    if (!file) {
+      console.warn("No file selected");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    console.log("filename", file.name);
+
+    reader.onload = async (e) => {
+      try {
+        // Check if the file content looks encrypted
+        const fileContent = e.target?.result as string;
+
+        // Detect non-JSON content by attempting a JSON parse
         try {
-          const parsedContent = JSON.parse(e.target?.result as string);
+          const parsedContent = JSON.parse(fileContent);
           setFileContent(parsedContent);
           setFileCreated(true);
-        } catch (error) {
-          console.error("Error reading file", error);
+          console.log("File opened successfully as JSON");
+        } catch {
+          // If JSON parsing fails, assume the file is encrypted and send it for decryption
+          console.warn(
+            "File appears to be encrypted. Sending for decryption..."
+          );
+
+          try {
+            const response = await axios.post(
+              "http://localhost:3005/api/decryptFile",
+              {
+                fileName: file.name,
+              }
+            );
+
+            if (response.status === 200) {
+              const decryptedContent = response.data.content;
+
+              try {
+                const parsedDecryptedContent = JSON.parse(decryptedContent);
+                setFileContent(parsedDecryptedContent);
+                setFileCreated(true);
+                console.log("Decrypted content loaded successfully");
+              } catch (error) {
+                console.error(
+                  "Failed to parse decrypted content as JSON:",
+                  error
+                );
+              }
+            } else {
+              console.error("Failed to decrypt file:", response.statusText);
+            }
+          } catch (error) {
+            console.error("Error sending file for decryption:", error);
+          }
         }
-      };
-      reader.readAsText(file);
-    }
+      } catch (error) {
+        console.error("Error reading file:", error);
+      }
+    };
+
+    // Read the file content as text
+    reader.readAsText(file);
   };
 
   return (
@@ -69,9 +119,16 @@ const FileManagement: React.FC = () => {
         ) : (
           <h4>{fileName}</h4>
         )}
-        <input type="file" style={{display: fileCreated ? "none" : 'block'}} onChange={openFile} placeholder="Open File" />
+        <input
+          type="file"
+          style={{ display: fileCreated ? "none" : "block" }}
+          onChange={openFile}
+          placeholder="Open File"
+        />
       </div>
-      {fileCreated && <TiptapEditor fileContent={fileContent} fileName={fileName} />}
+      {fileCreated && (
+        <TiptapEditor fileContent={fileContent} fileName={fileName} />
+      )}
     </>
   );
 };

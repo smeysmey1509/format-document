@@ -6,7 +6,6 @@ import "./TiptapEditor.css";
 import axios from "axios";
 
 interface TiptapEditorProps {
-  onTitleChage?: (title: string) => void;
   fileContent?: any;
   fileName?: string;
 }
@@ -34,8 +33,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
-  console.log("fileNameState: ", fileNameState);
-
   useEffect(() => {
     if (fileContent) {
       const { metadata: fileMetadata, content } = fileContent;
@@ -49,8 +46,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       setEditorContent(content);
     }
   }, [fileContent]);
-
-  console.log("editorContent", editorContent);
 
   const saveContentToFile = async () => {
     if (editor) {
