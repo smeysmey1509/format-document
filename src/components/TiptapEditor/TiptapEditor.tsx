@@ -52,30 +52,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
   console.log("editorContent", editorContent);
 
-  const importAsAJSON = () => {
-    if (editor) {
-      const jsonContent = editor.getJSON();
-      const structuredJSON = {
-        metadata: {
-          ...metadata,
-          last_modified: new Date().toISOString().split("T")[0],
-        },
-        content: jsonContent,
-      };
-      const jsonString = JSON.stringify(structuredJSON, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${metadata.title}.scl`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      console.warn("Editor instance is not ready.");
-    }
-  };
-
   const saveContentToFile = async () => {
     if (editor) {
       const jsonContent = editor.getJSON();
@@ -131,6 +107,65 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     if (url) {
       if (editor) {
         editor.chain().focus().setImage({ src: url }).run();
+      }
+    }
+  };
+
+  const importFile = async (fileNameState: string) => {
+    if (!fileNameState || fileNameState.trim() === "") {
+      console.warn("File name is empty or invalid.");
+      return;
+    }
+
+    try {
+      // Step 1: Encrypt the file
+      const encryptResponse = await axios.post(
+        "http://localhost:3005/api/encryptFile",
+        {
+          fileName: `${fileNameState}`,
+        }
+      );
+
+      if (encryptResponse.status === 200) {
+        console.log(
+          encryptResponse.data.message || "File encrypted successfully."
+        );
+
+        // Step 2: Download the encrypted file
+        const downloadResponse = await axios.get(
+          `http://localhost:3005/api/downloadFile/${fileNameState}.scl`,
+          {
+            responseType: "blob", // Treat the response as a binary blob
+          }
+        );
+
+        // Step 3: Create a Blob URL for the file
+        const url = window.URL.createObjectURL(
+          new Blob([downloadResponse.data])
+        );
+        const link = document.createElement("a");
+        link.href = url;
+
+        // Step 4: Set the downloaded file's name
+        link.setAttribute("download", `${fileNameState}.scl`);
+
+        // Step 5: Append the link to the document and trigger the download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        console.log("File downloaded successfully.");
+      } else {
+        console.error("Failed to encrypt the file.");
+      }
+    } catch (error: any) {
+      // Log detailed error information
+      if (error.response) {
+        console.error(
+          `Error: ${error.response.data?.message || error.message}`
+        );
+      } else {
+        console.error(`Error: ${error.message}`);
       }
     }
   };
@@ -192,20 +227,18 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           gap: "10px",
         }}
       >
-        {/* <button onClick={formatAsAJSON}>Test Button</button> */}
-        {/* <label className="form-label">Title:</label>
-        <input
-          type="text"
-          value={metadata.title}
-          onChange={(e) => updateTitle(e.target.value)}
-          className="form-input"
-        /> */}
         <button className="form-button" onClick={saveContentToFile}>
           Save
         </button>
-        <button onClick={importAsAJSON} className="form-button">
+        <button
+          onClick={() => importFile(fileNameState)}
+          className="form-button"
+        >
           Import File
         </button>
+        {/* <button onClick={() => encrypt(fileNameState)} className="form-button">
+          Encrypt
+        </button> */}
       </div>
       <div
         style={{
