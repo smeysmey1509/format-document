@@ -10,7 +10,7 @@ const FileManagement: React.FC = () => {
 
   const createFile = async () => {
     setFileCreated(true);
-
+    console.log('hello world')
     try {
       // Make a POST request to the backend API
       const response = await axios.post(
