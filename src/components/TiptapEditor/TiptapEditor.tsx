@@ -72,8 +72,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       // Ensure fileNameState does not include `.scl`
       const sanitizedFileName = fileNameState.replace(/\.scl$/, "");
 
-      console.log("Saving file:", sanitizedFileName);
-
       try {
         const response = await axios.post(
           "http://localhost:3005/api/writeFile",
@@ -135,7 +133,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       const encryptResponse = await axios.post(
         "http://localhost:3005/api/encryptFile",
         {
-          fileName: `${fileNameState}`,
+          fileName: fileNameState.replace(/\.scl$/, ""),
         }
       );
 
@@ -146,7 +144,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
 
         // Step 2: Download the encrypted file
         const downloadResponse = await axios.get(
-          `http://localhost:3005/api/downloadFile/${fileNameState}.scl`,
+          `http://localhost:3005/api/downloadFile/${fileNameState}`,
           {
             responseType: "blob", // Treat the response as a binary blob
           }
@@ -160,7 +158,7 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
         link.href = url;
 
         // Step 4: Set the downloaded file's name
-        link.setAttribute("download", `${fileNameState}.scl`);
+        link.setAttribute("download", `${fileNameState}`);
 
         // Step 5: Append the link to the document and trigger the download
         document.body.appendChild(link);
@@ -240,9 +238,6 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           gap: "10px",
         }}
       >
-        {/* <button className="form-button" onClick={saveContentToFile}>
-          Save
-        </button> */}
         <button
           onClick={() => importFile(fileNameState)}
           className="form-button"

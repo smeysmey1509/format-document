@@ -8,8 +8,6 @@ const FileManagement: React.FC = () => {
   const [fileName, setFileName] = useState("");
   const [fileContent, setFileContent] = useState<any>(null);
 
-  console.log("fileName", fileName);
-
   const createFile = async () => {
     setFileCreated(true);
 
@@ -65,7 +63,7 @@ const FileManagement: React.FC = () => {
             const response = await axios.post(
               "http://localhost:3005/api/decryptFile",
               {
-                fileName: fileName.replace(".scl", ""),
+                fileName: fileName.replace(".scl", ""), // Remove the .json extension
               }
             );
 
