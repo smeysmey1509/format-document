@@ -10,6 +10,16 @@ interface TiptapEditorProps {
   fileName?: string;
 }
 
+const debounce = (func: Function, delay: number) => {
+  let timeoutId: NodeJS.Timeout;
+  return (...args: any[]) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func(...args);
+    }, delay);
+  };
+};
+
 const TiptapEditor: React.FC<TiptapEditorProps> = ({
   fileContent,
   fileName,
@@ -59,11 +69,16 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
       };
       const jsonString = JSON.stringify(structuredJSON, null, 2);
 
+      // Ensure fileNameState does not include `.scl`
+      const sanitizedFileName = fileNameState.replace(/\.scl$/, "");
+
+      console.log("Saving file:", sanitizedFileName);
+
       try {
         const response = await axios.post(
-          "http://localhost:3005/api/appendFile",
+          "http://localhost:3005/api/writeFile",
           {
-            fileName: fileNameState,
+            fileName: sanitizedFileName,
             content: jsonString,
           }
         );
@@ -81,12 +96,15 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
     }
   };
 
+  const debouncedSaveContentToFile = debounce(saveContentToFile, 500);
+
   const editor = useEditor({
     extensions: [StarterKit, Image],
     content: editorContent,
     editable: true,
     onUpdate: ({ editor }) => {
       setEditorContent(editor.getHTML());
+      debouncedSaveContentToFile();
     },
     editorProps: {
       attributes: {
@@ -222,18 +240,15 @@ const TiptapEditor: React.FC<TiptapEditorProps> = ({
           gap: "10px",
         }}
       >
-        <button className="form-button" onClick={saveContentToFile}>
+        {/* <button className="form-button" onClick={saveContentToFile}>
           Save
-        </button>
+        </button> */}
         <button
           onClick={() => importFile(fileNameState)}
           className="form-button"
         >
           Import File
         </button>
-        {/* <button onClick={() => encrypt(fileNameState)} className="form-button">
-          Encrypt
-        </button> */}
       </div>
       <div
         style={{

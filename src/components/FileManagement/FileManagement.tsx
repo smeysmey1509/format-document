@@ -40,6 +40,8 @@ const FileManagement: React.FC = () => {
       return;
     }
 
+    setFileName(file.name);
+
     const reader = new FileReader();
 
     reader.onload = async (e) => {
@@ -63,7 +65,7 @@ const FileManagement: React.FC = () => {
             const response = await axios.post(
               "http://localhost:3005/api/decryptFile",
               {
-                fileName: fileName.replace(".scl", ""), // Send the file name without extension if required
+                fileName: fileName.replace(".scl", ""),
               }
             );
 
